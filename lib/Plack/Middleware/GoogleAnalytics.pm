@@ -6,12 +6,11 @@ use Plack::Util;
 use Plack::Util::Accessor qw(ga_id);
 use Text::MicroTemplate qw(:all);
 
-my $ga_template = qq~
-% my $stash = $_[0];
+sub ga_template {<<'EOF'};
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', '<?= $stash ?>']);
+  _gaq.push(['_setAccount', '<?= $_[0] ?>']);
   _gaq.push(['_trackPageview']);
 
   (function() {
@@ -21,7 +20,7 @@ my $ga_template = qq~
   })();
 
 </script>
-~;
+EOF
  
 sub call {
     my ($self, $env) = @_;
@@ -39,8 +38,7 @@ sub call {
         my $body = [];
         Plack::Util::foreach($res->[2], sub { push @$body, $_[0]; });
         $body = join '', @$body;
-        #$body .= render_mt($ga_template, $ga_id)->as_string;
-        $body .= render_mt($ga_template, 'John')->as_string;
+        $body .= render_mt($self->ga_template, $ga_id)->as_string;
 
         $res->[2] = [$body];
         $header->set('Content-Length', length $body);

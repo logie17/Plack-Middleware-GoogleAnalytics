@@ -1,12 +1,20 @@
 package Plack::Middleware::GoogleAnalytics; 
-use strict;
-use warnings;
-use parent qw( Plack::Middleware );
+use Moo;
 use Plack::Util;
-use Plack::Util::Accessor qw(ga_id);
 use Text::MicroTemplate qw(:all);
+use 5.008008;
 
-sub ga_template {<<'EOF'};
+extends 'Plack::Middleware';
+
+our $VERSION = '0.01';
+
+has 'ga_id' => (
+    is => 'ro',
+);
+
+has 'ga_template' => (
+    is => 'ro',
+    default => sub {<<'EOF'}
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
@@ -21,30 +29,77 @@ sub ga_template {<<'EOF'};
 
 </script>
 EOF
+);
  
 sub call {
     my ($self, $env) = @_;
 
-    my $res = $self->app->($env);
+    my $response = $self->app->($env);
+    $self->response_cb($response, sub { $self->_handle_response(shift) });
+}
 
-    $self->response_cb($res, sub {
-        my $res             = shift;
-        my $header          = Plack::Util::headers($res->[1]);
-        my $content_type    = $header->get('Content-Type');
-        my $ga_id           = $self->ga_id;
+sub _handle_response {
+    my ($self, $response)   = @_;
+    my $header              = Plack::Util::headers($response->[1]);
+    my $content_type        = $header->get('Content-Type');
+    my $ga_id               = $self->ga_id;
+    
+    return unless defined $content_type && $content_type =~ qr[text/html] && $ga_id;
+    
+    my $body = [];
+    Plack::Util::foreach( $response->[2], sub { push @$body, $_[0] });
+    $body = join '', @$body;
 
-        return unless defined $content_type and $content_type =~ qr[text/html] and $ga_id;
+    $body .= render_mt($self->ga_template, $ga_id)->as_string;
+    
+    $response->[2] = [$body];
+    $header->set('Content-Length', length $body);
 
-        my $body = [];
-        Plack::Util::foreach($res->[2], sub { push @$body, $_[0]; });
-        $body = join '', @$body;
-        $body .= render_mt($self->ga_template, $ga_id)->as_string;
-
-        $res->[2] = [$body];
-        $header->set('Content-Length', length $body);
-
-        return;
-    });
+    return;
 }
 
 1;
+=head1 NAME
+
+Plack::Middleware::GoogleAnalytics - Middleware to apply Google Anlytics javascript code.
+
+=head1 SYNOPSIS
+
+    use Plack::Builder;
+
+    builder {
+        enable "Plack::Middleware::GoogleAnalytics", ga_id => 'UA-214112-11';
+        $app;
+    };
+
+=head1 DESCRIPTION
+
+L<Plack::Middleware::GoogleAnalytics> will insert the standard google analytics 
+Javascript at the end of a text/html document. It places this boilerplate code at the
+end of the document.
+
+=head1 ARGUMENTS
+
+This middleware accepts the following arguments.
+
+=head2 ga_id
+
+This is the id that is supplied by Google. This is a required argument.
+
+=head1 SEE ALSO
+
+L<Plack>, L<Plack::Middleware>, L<Moo> 
+
+=head1 AUTHOR
+
+Logan Bell, C<< <logie@cpan.org> >>
+
+=head1 COPYRIGHT & LICENSE
+
+Copyright 2012, Logan Bell
+
+This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
+

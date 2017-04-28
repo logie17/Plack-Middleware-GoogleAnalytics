@@ -17,7 +17,6 @@ meta-spec:
   version: 1.4
 name: Plack-Middleware-GoogleAnalytics
 requires:
-  Moo: 0
   Plack::Util: 0
   Text::MicroTemplate: 0
 version: 0.001

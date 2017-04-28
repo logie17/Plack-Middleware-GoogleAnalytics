@@ -1,20 +1,13 @@
 package Plack::Middleware::GoogleAnalytics; 
-use Moo;
 use Plack::Util;
 use Text::MicroTemplate qw(:all);
 use 5.008008;
-
-extends 'Plack::Middleware';
+use parent qw/Plack::Middleware/;
+use Plack::Util::Accessor qw( ga_id ga_template );
 
 our $VERSION = '0.01';
 
-has 'ga_id' => (
-    is => 'ro',
-);
-
-has 'ga_template' => (
-    is => 'ro',
-    default => sub {<<'EOF'}
+our $DEFAULT_GA_TEMPLATE = <<'SCRIPT'
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
@@ -28,9 +21,9 @@ has 'ga_template' => (
   })();
 
 </script>
-EOF
-);
- 
+SCRIPT
+;
+
 sub call {
     my ($self, $env) = @_;
 
@@ -43,15 +36,15 @@ sub _handle_response {
     my $header              = Plack::Util::headers($response->[1]);
     my $content_type        = $header->get('Content-Type');
     my $ga_id               = $self->ga_id;
-    
+
     return unless defined $content_type && $content_type =~ qr[text/html] && $ga_id;
-    
+
     my $body = [];
     Plack::Util::foreach( $response->[2], sub { push @$body, $_[0] });
     $body = join '', @$body;
 
-    $body .= render_mt($self->ga_template, $ga_id)->as_string;
-    
+    $body .= render_mt($self->ga_template // $DEFAULT_GA_TEMPLATE, $ga_id)->as_string;
+
     $response->[2] = [$body];
     $header->set('Content-Length', length $body);
 
@@ -88,7 +81,7 @@ This is the id that is supplied by Google. This is a required argument.
 
 =head1 SEE ALSO
 
-L<Plack>, L<Plack::Middleware>, L<Moo> 
+L<Plack>, L<Plack::Middleware>
 
 =head1 AUTHOR
 

@@ -25,7 +25,6 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "Plack::Middleware::GoogleAnalytics",
   "PREREQ_PM" => {
-    "Moo" => 0,
     "Plack::Util" => 0,
     "Text::MicroTemplate" => 0
   },

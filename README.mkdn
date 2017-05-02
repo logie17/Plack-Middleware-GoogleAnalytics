@@ -23,7 +23,7 @@ This is the id that is supplied by Google. This is a required argument.
 
 # SEE ALSO
 
-[Plack](http://search.cpan.org/perldoc?Plack), [Plack::Middleware](http://search.cpan.org/perldoc?Plack::Middleware), [Moo](http://search.cpan.org/perldoc?Moo) 
+[Plack](http://search.cpan.org/perldoc?Plack), [Plack::Middleware](http://search.cpan.org/perldoc?Plack::Middleware)
 
 # AUTHOR
 
